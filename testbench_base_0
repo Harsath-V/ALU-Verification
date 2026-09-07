@@ -289,19 +289,8 @@ class scoreboard;
             // ------------------------------------------------
             if ((ref_item.result === item.result) &&
                 (ref_item.carry  === item.carry)) begin
-                pass_count++;
-                $display(
-                    "T=%0t [SUCCESS] Match! Op=%03b A=%0h B=%0h | Exp: Result=%0h Carry=%0b | Rec: Result=%0h Carry=%0b",
-                    $time,
-                    prev_item.op,
-                    prev_item.a,
-                    prev_item.b,
-                    ref_item.result,
-                    ref_item.carry,
-                    item.result,
-                    item.carry
-                );
-            end
+                    pass_count++;
+                end
             else begin
                 fail_count++;
                 $display(
@@ -435,11 +424,6 @@ module testbench();
     initial begin
         t0 = new;
         t0.e0.vif = intf;
-        
-//        intf.rstn <= 0;
-//        repeat (2) @(posedge clk);
-//        #1;
-//        intf.rstn = 1;
 
         t0.run();
 
