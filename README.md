@@ -255,32 +255,6 @@ Overall
 
 The exact coverage percentages depend on the simulator and randomized stimulus generated during the run.
 
-## How to Run
-
-The source uses SystemVerilog features, so it should be compiled using a SystemVerilog-capable simulator such as:
-
-- Siemens Questa/ModelSim
-- Synopsys VCS
-- Cadence Xcelium
-- Aldec Riviera-PRO
-
-Example with a simulator that supports SystemVerilog:
-
-```text
-Compile:
-    alu.sv
-    alu_tb.sv
-
-Run:
-    testbench
-
-Review:
-    Pass/Fail scoreboard summary
-    Assertion results
-    Functional coverage
-```
-
-The exact compilation and simulation commands depend on the simulator being used.
 
 ## Verification Goals
 
