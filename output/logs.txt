@@ -1,0 +1,15 @@
+Time resolution is 1 ps
+T=50000 [Driver] starting ...
+T=50000 [Monitor] starting ...
+T=70000 [Scoreboard] First transaction captured, waiting for DUT output...
+T=50150000 [Scoreboard] Summary: Passed=2503, Failed=0
+==============================
+FUNCTIONAL COVERAGE
+==============================
+cp_op    = 100.00%
+cp_a     = 100.00%
+cp_b     = 100.00%
+Cross Overall  = 41.25%
+Overall  = 82.92%
+==============================
+$finish called at time : 50150 ns : File "C:/Harsath/ALU_Verification/ALU_Verification.srcs/sources_1/new/testbench.sv" Line 469
