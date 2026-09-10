@@ -14,7 +14,7 @@ class transaction_item;
 
     // Distribution constraint for corner cases
     constraint corner_cases_a {
-        a dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60 };
+        a dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60};
     }
     constraint corner_cases_b {
         b dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60 };
@@ -77,7 +77,7 @@ interface intf(input bit clk);
     // SVA 3: Combinational AND Assertion check using $past
     property p_and_op;
         @(posedge clk) disable iff (!rstn)
-        ($past(op) == 3'b010) |-> (result == ($past(a) & $past(b)) && carry == 1'b0);
+        $past(rstn) && ($past(op) == 3'b010) |-> (result == ($past(a) & $past(b)) && carry == 1'b0);
     endproperty
     a_and_op: assert property(p_and_op)
         else $error("SVA Error: AND operation output mismatch!");
@@ -90,37 +90,62 @@ class generator;
   event drv_done;
   event gen_cmpltd;
   mailbox drv_mbx;
-
-  task run();
-    bit [2:0] opcode [5] = '{3'b000, 3'b001, 3'b010, 3'b011, 3'b100};
-//    for (int i = 0; i < 10; i++) begin
-//        for (int j = 0; j < 10; j++) begin
-//            for (int k = 0; k < 5; k++) begin
-//              transaction_item item = new;
-////              item.rstn = 1;
-//              item.a = i;
-//              item.b = j;
-//              item.op = opcode[k];
-//              $display("T=%0t [Generator] a=%0d b=%0d op=%03b", $time, i, j, opcode[k]);
-//              drv_mbx.put(item);
-////              $display ("T=%0t [Generator] Wait for driver to be done", $time);
-//              @(drv_done);
-//            end
-//        end
-//    end
-       int loop_count = 2500;
-       for (int i = 0; i < loop_count; i++) begin
+  
+  task send_directed(input bit [7:0]in_a, in_b, input bit [2:0]in_op);
             transaction_item item = new();
-            
-            if (!item.randomize()) begin
-                $fatal(1, "[Generator] Randomization failed!");
-            end
-            item.rstn = 1'b1; // Default to active high operational mode
-            
+            item.rstn = 1'b1;
+            item.a = in_a;
+            item.b = in_b;
+            item.op = in_op;
             drv_mbx.put(item);
             @(drv_done);
+            $display ("Done");
+       endtask
+  
+  task run();
+    bit [2:0] opcode [5] = '{3'b000, 3'b001, 3'b010, 3'b011, 3'b100};
+    int loop_count = 2500;
+    send_directed(8'h00, 8'h00, 3'b000);
+    send_directed(8'h00, 8'hFF, 3'b000);
+    send_directed(8'hFF, 8'h00, 3'b000);
+    send_directed(8'hFF, 8'h01, 3'b000);
+    send_directed(8'hFF, 8'hFF, 3'b000);
+    send_directed(8'h01, 8'h01, 3'b000);
+    
+    send_directed(8'h00, 8'h00, 3'b001);
+    send_directed(8'h05, 8'h03, 3'b001);
+    send_directed(8'h03, 8'h05, 3'b001);
+    send_directed(8'h00, 8'h01, 3'b001);
+    send_directed(8'hFF, 8'h01, 3'b001);
+    send_directed(8'hFF, 8'hFF, 3'b001);
+    
+    send_directed(8'h00, 8'h00, 3'b010);
+    send_directed(8'h00, 8'hFF, 3'b010);
+    send_directed(8'hFF, 8'hFF, 3'b010);
+    send_directed(8'hAA, 8'h55, 3'b010);
+    
+    send_directed(8'h00, 8'h00, 3'b011);
+    send_directed(8'h00, 8'hFF, 3'b011);
+    send_directed(8'hFF, 8'hFF, 3'b011);
+    send_directed(8'hAA, 8'h55, 3'b011);
+    
+    send_directed(8'h00, 8'h00, 3'b100);
+    send_directed(8'h00, 8'hFF, 3'b100);
+    send_directed(8'hFF, 8'hFF, 3'b100);
+    send_directed(8'hAA, 8'h55, 3'b100);
+
+    for (int i = 0; i < loop_count; i++) begin
+        transaction_item item = new();
+        
+        if (!item.randomize()) begin
+            $fatal(1, "[Generator] Randomization failed!");
         end
-    -> gen_cmpltd;
+        item.rstn = 1'b1; // Default to active high operational mode
+        
+        drv_mbx.put(item);
+        @(drv_done);
+     end
+     -> gen_cmpltd;
   endtask
 endclass
 
@@ -287,6 +312,7 @@ class scoreboard;
         reference_model ref_mod;
 
         forever begin
+            ref_mod = new();
             // Get transaction from monitor
             scb_mbx.get(item);
             // ------------------------------------------------
@@ -430,6 +456,7 @@ module testbench();
     reg clk;
     initial begin
         clk = 0;
+        intf.rstn = 0;
         forever begin
             #10 clk = ~clk;
         end
