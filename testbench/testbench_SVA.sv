@@ -9,7 +9,7 @@ class transaction_item;
     
     // Constrain opcodes to valid ALU operations
     constraint valid_op {
-        op inside {3'b000, 3'b001, 3'b010, 3'b011, 3'b100};
+        op inside {3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101, 3'b110, 3'b111};
     }
 
     // Distribution constraint for corner cases
@@ -93,7 +93,7 @@ interface intf(input bit clk);
     // SVA 5: Combinational SUB Assertion check using $past
     property p_and_sub;
         @(posedge clk) disable iff (!rstn)
-        $past(rstn) && ($past(op) == 3'b001) |-> ({carry, result} == ($past(a) - $past(b)));
+        $past(rstn) && ($past(op) == 3'b001) |-> (result == ($past(a) - $past(b)) && carry == ($past(a) < $past(b)));
     endproperty
     a_and_sub: assert property(p_and_sub)
         else $error("SVA Error: SUB operation output mismatch!");   
@@ -323,7 +323,7 @@ class reference_model;
         if (exp_trans.rstn) begin
             case (exp_trans.op)
                 3'b000: {exp_trans.carry, exp_trans.result} = exp_trans.a + exp_trans.b;
-                3'b001: {exp_trans.carry, exp_trans.result} = exp_trans.a - exp_trans.b; // Unsigned borrow-out
+                3'b001: {exp_trans.carry, exp_trans.result} = {exp_trans.a < exp_trans.b, exp_trans.a - exp_trans.b}; // Unsigned borrow-out
                 3'b010: {exp_trans.carry, exp_trans.result} = {1'b0, exp_trans.a & exp_trans.b};
                 3'b011: {exp_trans.carry, exp_trans.result} = {1'b0, exp_trans.a | exp_trans.b};
                 3'b100: {exp_trans.carry, exp_trans.result} = {1'b0, exp_trans.a ^ exp_trans.b};
