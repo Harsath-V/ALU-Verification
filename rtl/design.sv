@@ -14,7 +14,7 @@ module alu (
 
     always @(posedge clk or negedge rstn) begin
        if (!rstn) begin
-            result <= 8'h00;
+            result <= 8'h0;
             carry  <= 1'b0;
         end
 
@@ -24,7 +24,8 @@ module alu (
                     {carry, result} <= a + b;
                 end
                 3'b001: begin
-                    {carry, result} <= a - b;
+                    result <= a - b;
+                    carry <= a < b;
                 end
                 3'b010: begin
                     result <= a & b;
