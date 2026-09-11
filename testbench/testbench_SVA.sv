@@ -7,18 +7,18 @@ class transaction_item;
     bit [7:0] result;
     bit carry;
     
-    // Constrain opcodes to valid ALU operations
-    constraint valid_op {
-        op inside {3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101, 3'b110, 3'b111};
-    }
+//    // Constrain opcodes to valid ALU operations
+//    constraint valid_op {
+//        op inside {3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101, 3'b110, 3'b111};
+//    }
 
-    // Distribution constraint for corner cases
-    constraint corner_cases_a {
-        a dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60};
-    }
-    constraint corner_cases_b {
-        b dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60 };
-    }
+//    // Distribution constraint for corner cases
+//    constraint corner_cases_a {
+//        a dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60};
+//    }
+//    constraint corner_cases_b {
+//        b dist { 8'h00 := 20, 8'hFF := 20, [8'h01:8'hFE] := 60 };
+//    }
     
     function void print();
         $display("Values: a=0x%0h, b=0x%0h, result=0x%0h, carry=0x%0h",a, b, result, carry);
@@ -131,69 +131,23 @@ class generator;
   event gen_cmpltd;
   mailbox drv_mbx;
   
-  task reset();
-        transaction_item item = new();
-        item.rstn = 1'b0; // Active-low reset
-        item.a    = 8'h00;
-        item.b    = 8'h00;
-        item.op   = 3'b000;
-        drv_mbx.put(item);
-        @(drv_done);
-    endtask
-  
-  task send_directed(input bit [7:0]in_a, in_b, input bit [2:0]in_op);
-            transaction_item item = new();
-            item.rstn = 1'b1;
-            item.a = in_a;
-            item.b = in_b;
-            item.op = in_op;
-            drv_mbx.put(item);
-            @(drv_done);
-       endtask
-  
   task run();
     bit [2:0] opcode [8] = '{3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101, 3'b110, 3'b111};
-    int loop_count = 2500;
-    send_directed(8'h00, 8'h00, 3'b000);
-    send_directed(8'h00, 8'hFF, 3'b000);
-    send_directed(8'hFF, 8'h00, 3'b000);
-    send_directed(8'hFF, 8'h01, 3'b000);
-    send_directed(8'hFF, 8'hFF, 3'b000);
-    send_directed(8'h01, 8'h01, 3'b000);
     
-    send_directed(8'h00, 8'h00, 3'b001);
-    send_directed(8'h05, 8'h03, 3'b001);
-    send_directed(8'h03, 8'h05, 3'b001);
-    send_directed(8'h00, 8'h01, 3'b001);
-    send_directed(8'hFF, 8'h01, 3'b001);
-    send_directed(8'hFF, 8'hFF, 3'b001);
-    reset();
-    send_directed(8'h00, 8'h00, 3'b010);
-    send_directed(8'h00, 8'hFF, 3'b010);
-    send_directed(8'hFF, 8'hFF, 3'b010);
-    send_directed(8'hAA, 8'h55, 3'b010);
-    reset();
-    send_directed(8'h00, 8'h00, 3'b011);
-    send_directed(8'h00, 8'hFF, 3'b011);
-    send_directed(8'hFF, 8'hFF, 3'b011);
-    send_directed(8'hAA, 8'h55, 3'b011);
-    
-    send_directed(8'h00, 8'h00, 3'b100);
-    send_directed(8'h00, 8'hFF, 3'b100);
-    send_directed(8'hFF, 8'hFF, 3'b100);
-    send_directed(8'hAA, 8'h55, 3'b100);
-    
-    
-    for (int i = 0; i < loop_count; i++) begin
-        transaction_item item = new();
-        
-        if (!item.randomize()) begin
-            $fatal(1, "[Generator] Randomization failed!");
+    for (int i = 0; i < 256; i++) begin
+        for (int j = 0; j < 256; j++) begin
+            for (int k = 0; k < 8; k++) begin
+                transaction_item item = new();
+                
+                item.rstn = 1'b1; // Default to active high operational mode
+                item.a = i;
+                item.b = j;
+                item.op = opcode[k];
+                
+                drv_mbx.put(item);
+                @(drv_done);
+            end
         end
-        item.rstn = 1'b1; // Default to active high operational mode
-        
-        drv_mbx.put(item);
-        @(drv_done);
      end
      -> gen_cmpltd;
   endtask
@@ -224,6 +178,7 @@ class driver;
             drv_mbx.get(item);
             
             // Synchronize with driver clocking block
+            @(vif.driver_cb);
             @(vif.driver_cb);
             vif.driver_cb.rstn <= item.rstn;
             vif.driver_cb.a    <= item.a;
@@ -309,10 +264,12 @@ class monitor;
             transaction_item item = new();
             // Sample strictly on clocking block edge (no #1 manual delay needed)
             @(vif.monitor_cb);
-            item.rstn   = vif.monitor_cb.rstn;
-            item.a      = vif.monitor_cb.a;
-            item.b      = vif.monitor_cb.b;
-            item.op     = vif.monitor_cb.op;
+            item.rstn = vif.monitor_cb.rstn;
+            item.a    = vif.monitor_cb.a;
+            item.b    = vif.monitor_cb.b;
+            item.op   = vif.monitor_cb.op;
+            
+            @(vif.monitor_cb);
             item.result = vif.monitor_cb.result;
             item.carry  = vif.monitor_cb.carry;
             
@@ -377,7 +334,7 @@ class scoreboard;
                 continue;
             end
             
-            ref_item = ref_mod.predict(prev_item);
+            ref_item = ref_mod.predict(item);
 
             // ------------------------------------------------
             // Compare expected result against DUT output
@@ -458,12 +415,13 @@ class env;
       d0.vif = vif;
       m0.vif = vif;
       
-      d0.reset();
       fork
         s0.run();
 		d0.run();
     	m0.run();
       join_none
+      
+      d0.reset();
       
       fork
       g0.run();
