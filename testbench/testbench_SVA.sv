@@ -75,12 +75,52 @@ interface intf(input bit clk);
         else $error("SVA Error: Result/Carry driving X or Z!");
 
     // SVA 3: Combinational AND Assertion check using $past
-    property p_and_op;
+    property p_and_and;
         @(posedge clk) disable iff (!rstn)
         $past(rstn) && ($past(op) == 3'b010) |-> (result == ($past(a) & $past(b)) && carry == 1'b0);
     endproperty
-    a_and_op: assert property(p_and_op)
+    a_and_and: assert property(p_and_and)
         else $error("SVA Error: AND operation output mismatch!");
+   
+   // SVA 4: Combinational ADD Assertion check using $past     
+   property p_and_add;
+        @(posedge clk) disable iff (!rstn)
+        $past(rstn) && ($past(op) == 3'b000) |-> ({carry, result} == ($past(a) + $past(b)));
+    endproperty
+    a_and_add: assert property(p_and_add)
+        else $error("SVA Error: ADD operation output mismatch!");
+    
+    // SVA 5: Combinational SUB Assertion check using $past
+    property p_and_sub;
+        @(posedge clk) disable iff (!rstn)
+        $past(rstn) && ($past(op) == 3'b001) |-> ({carry, result} == ($past(a) - $past(b)));
+    endproperty
+    a_and_sub: assert property(p_and_sub)
+        else $error("SVA Error: SUB operation output mismatch!");   
+    
+    // SVA 6: Combinational OR Assertion check using $past
+    property p_and_or;
+        @(posedge clk) disable iff (!rstn)
+        $past(rstn) && ($past(op) == 3'b011) |-> (result == ($past(a) | $past(b)) && carry == 1'b0);
+    endproperty
+    a_and_or: assert property(p_and_or)
+        else $error("SVA Error: OR operation output mismatch!");      
+    
+    // SVA 7: Combinational XOR Assertion check using $past
+    property p_and_xor;
+        @(posedge clk) disable iff (!rstn)
+        $past(rstn) && ($past(op) == 3'b100) |-> (result == ($past(a) ^ $past(b)) && carry == 1'b0);
+    endproperty
+    a_and_xor: assert property(p_and_xor)
+        else $error("SVA Error: XOR operation output mismatch!");   
+    
+    // SVA 8: Invalid Opcode
+    property p_invalid_op;
+        @(posedge clk) disable iff (!rstn)
+        ($past(op) inside {3'b101, 3'b110, 3'b111}) |-> (result == 8'h00 && carry == 1'b0);
+    endproperty
+    a_invalid_op: assert property(p_invalid_op)
+        else $error("SVA Error: Invalid opcode did not produce zero output!");
 endinterface
 
 //-----------------------
@@ -99,7 +139,6 @@ class generator;
             item.op = in_op;
             drv_mbx.put(item);
             @(drv_done);
-            $display ("Done");
        endtask
   
   task run();
