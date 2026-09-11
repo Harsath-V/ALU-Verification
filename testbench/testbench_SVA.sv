@@ -131,6 +131,16 @@ class generator;
   event gen_cmpltd;
   mailbox drv_mbx;
   
+  task reset();
+        transaction_item item = new();
+        item.rstn = 1'b0; // Active-low reset
+        item.a    = 8'h00;
+        item.b    = 8'h00;
+        item.op   = 3'b000;
+        drv_mbx.put(item);
+        @(drv_done);
+    endtask
+  
   task send_directed(input bit [7:0]in_a, in_b, input bit [2:0]in_op);
             transaction_item item = new();
             item.rstn = 1'b1;
@@ -142,7 +152,7 @@ class generator;
        endtask
   
   task run();
-    bit [2:0] opcode [5] = '{3'b000, 3'b001, 3'b010, 3'b011, 3'b100};
+    bit [2:0] opcode [8] = '{3'b000, 3'b001, 3'b010, 3'b011, 3'b100, 3'b101, 3'b110, 3'b111};
     int loop_count = 2500;
     send_directed(8'h00, 8'h00, 3'b000);
     send_directed(8'h00, 8'hFF, 3'b000);
@@ -157,12 +167,12 @@ class generator;
     send_directed(8'h00, 8'h01, 3'b001);
     send_directed(8'hFF, 8'h01, 3'b001);
     send_directed(8'hFF, 8'hFF, 3'b001);
-    
+    reset();
     send_directed(8'h00, 8'h00, 3'b010);
     send_directed(8'h00, 8'hFF, 3'b010);
     send_directed(8'hFF, 8'hFF, 3'b010);
     send_directed(8'hAA, 8'h55, 3'b010);
-    
+    reset();
     send_directed(8'h00, 8'h00, 3'b011);
     send_directed(8'h00, 8'hFF, 3'b011);
     send_directed(8'hFF, 8'hFF, 3'b011);
@@ -172,7 +182,8 @@ class generator;
     send_directed(8'h00, 8'hFF, 3'b100);
     send_directed(8'hFF, 8'hFF, 3'b100);
     send_directed(8'hAA, 8'h55, 3'b100);
-
+    
+    
     for (int i = 0; i < loop_count; i++) begin
         transaction_item item = new();
         
