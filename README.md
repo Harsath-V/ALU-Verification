@@ -1,292 +1,402 @@
-# 8-bit ALU — SystemVerilog Functional Verification
+ALU Verification using SystemVerilog
 
-A SystemVerilog-based verification environment for a simple **8-bit Arithmetic Logic Unit (ALU)**. The project demonstrates a class-based, constrained-random testbench with a generator, driver, monitor, reference model, scoreboard, functional coverage, and SystemVerilog Assertions (SVA).
+A class-based SystemVerilog verification environment developed to verify
+an 8-bit synchronous Arithmetic Logic Unit (ALU) using
+constrained/exhaustive stimulus, a reference model, scoreboard
+checking, SystemVerilog Assertions (SVA), functional coverage, cross
+coverage, and XSIM code coverage.
 
-## Project Overview
+Project Overview
 
-The ALU is a clocked design with an active-low asynchronous reset. It accepts two 8-bit operands and a 3-bit operation code, producing an 8-bit result and a carry output.
+This project is the first verification project in a progression toward
+more advanced RTL verification, including FIFO verification, APB
+verification, and eventually UVM-based environments.
 
-The verification environment generates randomized transactions, drives them to the DUT, observes the outputs, calculates expected results using a reference model, compares expected and actual outputs, and collects functional coverage.
+The ALU supports five valid operations and three invalid/reserved
+opcodes.
 
-## ALU Operations
+DUT Operations
 
-| `op` | Operation | Result | Carry |
-|------|-----------|--------|-------|
-| `000` | Addition | `a + b` | Carry-out |
-| `001` | Subtraction | `a - b` | Unsigned borrow-out |
-| `010` | AND | `a & b` | `0` |
-| `011` | OR | `a \| b` | `0` |
-| `100` | XOR | `a ^ b` | `0` |
-| Others | Default | `0` | `0` |
+Opcode     Operation   Carry
 
-The DUT is implemented as a sequential ALU, with outputs updated on the rising edge of `clk`.
+3'b000   ADD         Addition carry-out
+3'b001   SUB         Borrow indication (a < b)
+3'b010   AND         0
+3'b011   OR          0
+3'b100   XOR         0
+3'b101   Invalid     0, result 0
+3'b110   Invalid     0, result 0
+3'b111   Invalid     0, result 0
 
-## Verification Architecture
+The ALU is synchronous and uses an active-low reset.
 
-```text
-                 +----------------+
-                 |    Generator   |
-                 | Constrained     |
-                 | Random Stimulus |
-                 +-------+--------+
-                         |
-                         v
-                 +----------------+
-                 |     Driver     |
-                 +-------+--------+
-                         |
-                         v
-                  +-------------+
-                  |     DUT     |
-                  |  8-bit ALU  |
-                  +------+------+
-                         |
-                         v
-                 +----------------+
-                 |    Monitor     |
-                 +-------+--------+
-                         |
-             +-----------+-----------+
-             |                       |
-             v                       v
-      +-------------+         +--------------+
-      | Scoreboard  |         |  Coverage    |
-      | + Reference |         |  Collection  |
-      |    Model    |         +--------------+
-      +-------------+
+Verification Environment
 
-             Interface
-        + SystemVerilog Assertions
-        + Clocking Blocks
-        + Modports
-```
+The testbench follows a class-based, transaction-level architecture:
 
-## Testbench Components
+                    +-------------+
+                    |  Generator  |
+                    +------+------+
+                           |
+                        Mailbox
+                           |
+                           v
+                    +-------------+
+                    |   Driver    |
+                    +------+------+
+                           |
+                           v
+                    +-------------+
+                    |     DUT     |
+                    |     ALU     |
+                    +------+------+
+                           |
+                           v
+                    +-------------+
+                    |   Monitor   |
+                    +------+------+
+                           |
+                        Mailbox
+                           |
+              +------------+------------+
+              |                         |
+              v                         v
+       +-------------+          +---------------+
+       | Scoreboard  |<---------| Reference     |
+       |             |          | Model         |
+       +-------------+          +---------------+
+              |
+              v
+         PASS / FAIL
 
-### 1. Transaction Item
+       +-------------------+
+       | Functional        |
+       | Coverage          |
+       +-------------------+
 
-`transaction_item` represents a single ALU transaction.
+       +-------------------+
+       | SVA Assertions    |
+       +-------------------+
 
-It contains:
-- Reset
-- Operand `a`
-- Operand `b`
-- Operation `op`
-- Observed/expected `result`
-- Observed/expected `carry`
+       +-------------------+
+       | XSIM Code         |
+       | Coverage          |
+       +-------------------+
 
-The operands and operation are randomized using SystemVerilog constraints.
+Components
 
-### 2. Constrained-Random Generator
+Transaction Item
+Encapsulates ALU inputs, reset, and output information.
 
-The generator creates **2500 randomized transactions**.
+Generator
+Generates exhaustive ALU stimulus covering all combinations of:
 
-The operation is constrained to the five supported ALU operations:
+a: 256 values
 
-```systemverilog
-3'b000, 3'b001, 3'b010, 3'b011, 3'b100
-```
+b: 256 values
 
-Corner-case distribution is also applied to both operands:
+op: 8 values
 
-- `8'h00` — 20%
-- `8'hFF` — 20%
-- `8'h01` to `8'hFE` — 60%
+Total stimulus combinations:
 
-This increases the likelihood of exercising boundary values while still providing broad randomized stimulus.
+256 × 256 × 8 = 524,288
 
-### 3. Driver
+Driver
+Drives transactions to the DUT through a virtual interface and
+clocking block.
 
-The driver receives transactions through a mailbox and drives:
+Monitor
+Samples DUT inputs and outputs using a clocking block and forwards
+observed transactions to the scoreboard and coverage model.
 
-- `rstn`
-- `a`
-- `b`
-- `op`
+Reference Model
+Independently calculates the expected ALU result and carry/borrow
+behavior.
 
-through the interface's driver clocking block.
+Scoreboard
+Compares DUT outputs against the reference model and maintains
+pass/fail counts.
 
-The reset sequence initially drives reset low for two clock cycles and then releases it.
+Functional Coverage
+Covers ALU operations, input ranges, carry behavior, reset state,
+and relevant cross coverage.
 
-### 4. Monitor
+SVA Assertions
+Checks reset behavior, output validity, operation correctness, and
+invalid opcode behavior.
 
-The monitor samples DUT inputs and outputs through the monitor clocking block and forwards transactions to the scoreboard.
+Stimulus Strategy
 
-It also sends observed transactions to the functional coverage model.
+The final ALU test uses exhaustive stimulus rather than relying only on
+randomization.
 
-### 5. Reference Model
+For every possible pair of 8-bit operands and every 3-bit opcode:
 
-The reference model independently calculates the expected ALU output for each transaction.
+a   = 0 → 255
+b   = 0 → 255
+op  = 000 → 111
 
-This provides a golden model against which the DUT output is compared.
+This gives:
 
-### 6. Scoreboard
+524,288 unique input combinations
 
-The scoreboard compares:
+The exhaustive approach is particularly suitable for this small 8-bit
+ALU because the complete input space can be simulated.
 
-- Expected `result` vs. actual `result`
-- Expected `carry` vs. actual `carry`
+Assertions
 
-The implementation accounts for the ALU's one-cycle sequential behavior by using the previous sampled transaction when generating the expected output.
+The testbench includes SystemVerilog Assertions for:
 
-It maintains:
+Reset
 
-```text
-Pass Count
-Fail Count
-```
+Verifies that asserting the active-low reset causes the registered
+outputs to clear.
 
-and prints mismatch information whenever the DUT output differs from the reference model.
+Unknown Output Detection
 
-### 7. Functional Coverage
+Checks that result and carry do not become unknown during normal
+operation.
 
-The testbench collects coverage for:
+Operation Checks
 
-- Operation
-- Operand `a`
-- Operand `b`
-- Carry
-- Reset state
+Assertions independently verify:
 
-Cross coverage includes:
+ADD
 
-- Operation × `a`
-- Operation × `b`
-- Operation × Carry
-- Operation × `a` × `b`
+SUB
 
-Logical operations are excluded from the carry-set cross because AND, OR, and XOR explicitly drive carry to zero.
+AND
 
-### 8. SystemVerilog Assertions
+OR
 
-The interface contains three SVA checks.
+XOR
 
-#### Reset Check
+The assertions account for the ALU's registered output latency using
+$past().
 
-Verifies that when reset is asserted, the DUT outputs become zero on the next rising clock edge.
+Invalid Opcode
 
-#### Unknown-State Check
+Verifies that opcodes 101, 110, and 111 produce zero result and
+zero carry.
 
-Checks that `result` and `carry` do not contain X/Z values during normal operation.
+Functional Coverage
 
-#### AND Operation Check
+The functional coverage model contains:
 
-Uses `$past()` to verify that an AND operation produces the expected result and clears carry.
+Coverpoints
 
-## Key SystemVerilog Concepts Demonstrated
+cp_op
 
-This project demonstrates several important verification concepts:
+cp_a
 
-- SystemVerilog classes
-- Object-oriented testbench architecture
-- Constrained-random stimulus
-- Mailboxes
-- Events
-- Virtual interfaces
-- Clocking blocks
-- Modports
-- Reference modeling
-- Scoreboarding
-- Functional coverage
-- Cross coverage
-- SystemVerilog Assertions
-- `$past()`
-- `$isunknown()`
-- Reset verification
-- One-cycle DUT latency handling
+cp_b
 
-## File Structure
+cp_carry
 
-A typical GitHub repository can be organized as:
+cp_rstn
 
-```text
-8bit-alu-systemverilog/
-│
-├── rtl/
-│   └── alu.sv
-│
-├── tb/
-│   └── alu_tb.sv
+Cross Coverage
+
+Operation × A
+
+Operation × B
+
+Operation × Carry
+
+Operation × A × B
+
+Logical operations are excluded from the carry-set cross where carry is
+not a meaningful output for those operations.
+
+Final Functional Coverage
+
+cp_op          100%
+cp_a           100%
+cp_b           100%
+Cross Overall  100%
+Overall        100%
+
+Code Coverage
+
+Code coverage was collected using Vivado XSIM.
+
+The following metrics were enabled:
+
+Statement coverage
+
+Branch coverage
+
+Condition coverage
+
+Toggle coverage
+
+The observed overall XSIM report included:
+
+Line Coverage       92.3611%
+Branch Coverage     100%
+Condition Coverage  97.619%
+Toggle Coverage     37.71%
+
+The overall toggle score is affected by Vivado-generated glbl.v
+infrastructure. The generated glbl.v contains global/JTAG-related
+signals that are not part of the ALU verification target.
+
+For the ALU RTL itself:
+
+Branch Coverage     100%
+Condition Coverage  100%
+Statement Coverage  85.71%
+
+The statement report showed uncovered structural case/begin/end
+lines while the executable operation statements were exercised.
+
+Therefore, the code coverage results were inspected rather than
+increasing stimulus solely to chase an overall percentage.
+
+Tools
+
+SystemVerilog
+
+Vivado
+
+Vivado XSIM
+
+SystemVerilog Assertions (SVA)
+
+Functional Coverage
+
+XSIM Code Coverage
+
+Project Structure
+
+A typical project organization is:
+
+ALU_Verification/
 │
 ├── README.md
-└── ...
-```
+│
+├── rtl/
+│   └── design.sv
+│
+└── tb/
+    └── testbench.sv
 
-The RTL file contains the ALU DUT, while the testbench contains the transaction, generator, driver, monitor, reference model, scoreboard, coverage, assertions, environment, and testbench top.
+The exact directory structure may vary depending on the Vivado project
+organization.
 
-## Expected Verification Flow
+Verification Results
 
-```text
-Reset
-  ↓
-Generate randomized transaction
-  ↓
-Drive transaction to DUT
-  ↓
-DUT processes transaction on clock edge
-  ↓
-Monitor samples transaction/output
-  ↓
-Reference model predicts expected result
-  ↓
-Scoreboard compares expected vs. actual
-  ↓
-Coverage is sampled
-  ↓
-Repeat for 2500 transactions
-  ↓
-Print pass/fail and coverage summary
-```
+Final functional verification achieved:
 
-## Coverage Summary
+Generated stimulus : 524,288 exhaustive combinations
+Scoreboard failures: 0
+Functional coverage: 100%
+Branch coverage    : 100%
+Condition coverage : 100%
 
-At the end of simulation, the testbench reports:
+The testbench therefore exercised the complete defined ALU input space
+and all defined functional scenarios without scoreboard mismatches.
 
-```text
-FUNCTIONAL COVERAGE
-==============================
-cp_op
-cp_a
-cp_b
-Cross Overall
-Overall
-==============================
-```
+Key Verification Concepts Demonstrated
 
-The exact coverage percentages depend on the simulator and randomized stimulus generated during the run.
+This project was used to build a foundation in:
 
+Class-based SystemVerilog
 
-## Verification Goals
+Transaction-based verification
 
-The primary goals of this project are to verify:
+Object-oriented testbench components
 
-1. Correct arithmetic operations.
-2. Correct logical operations.
-3. Correct carry behavior.
-4. Correct reset behavior.
-5. Absence of unknown output values during operation.
-6. Correct handling of sequential/one-cycle output behavior.
-7. Coverage of valid operations and operand ranges.
-8. Coverage of important corner cases such as `0x00` and `0xFF`.
+Virtual interfaces
 
-## Notes
+Clocking blocks
 
-- Reset is active-low (`rstn`).
-- The ALU outputs are registered.
-- Only five operation codes are considered valid.
-- Addition and subtraction use a 9-bit concatenation to capture the carry/borrow bit.
-- The testbench uses constrained randomization rather than a fixed directed test set.
-- The scoreboard compares the DUT output against the previous transaction because the DUT is sequential.
+Mailboxes
 
-## Future Improvements
+Events
 
-Possible extensions include:
+Generator/Driver/Monitor architecture
 
-- Add directed tests for specific arithmetic corner cases.
-- Add assertions for ADD, SUB, OR, and XOR operations.
-- Add more detailed carry/borrow coverage.
-- Add functional coverage for specific arithmetic boundary combinations.
-- Add a virtual sequence/sequencer-style structure.
-- Add automated regression scripts.
-- Add waveform configuration and examples.
-- Add simulator-specific Makefile or run scripts.
+Reference models
+
+Scoreboards
+
+Functional coverage
+
+Cross coverage
+
+SystemVerilog Assertions
+
+$past() temporal checking
+
+Exhaustive verification
+
+XSIM code coverage
+
+Coverage analysis
+
+Reset verification
+
+DUT/output latency handling
+
+Lessons Learned
+
+1. Functional coverage and code coverage are different
+
+Functional coverage measures whether the intended scenarios were
+exercised.
+
+Code coverage measures which portions of the RTL and simulation code
+were executed.
+
+Both provide different information and should not be treated as
+interchangeable.
+
+2. Output latency must be considered in the monitor
+
+Because the ALU registers its outputs, an observed output corresponds to
+the input transaction from the previous clock cycle.
+
+The monitor therefore needs to associate inputs and outputs according to
+the DUT's timing rather than simply comparing values sampled at the same
+edge.
+
+3. Clocking blocks control synchronization
+
+The testbench uses clocking blocks to define when signals are sampled
+and driven, avoiding arbitrary procedural delays in the verification
+components.
+
+4. Coverage numbers need interpretation
+
+A low overall code-coverage number does not automatically mean that the
+DUT is poorly verified. Generated infrastructure such as glbl.v can
+contribute to the reported score.
+
+Coverage should be analyzed at the DUT level and uncovered items should
+be investigated before adding unnecessary stimulus.
+
+Future Improvements
+
+Potential improvements to this project include:
+
+Cleaner explicit termination of driver, monitor, and scoreboard
+processes
+
+More formal reset/pipeline flushing in the scoreboard
+
+Clear separation of reset transactions from normal stimulus
+
+Dedicated directed corner-case tests
+
+Constraint-based random testing in addition to exhaustive testing
+
+Multi-seed regression
+
+Improved coverage configuration to focus reporting on the DUT
+
+Additional code-coverage analysis
+
+These improvements are useful extensions, but the current project
+establishes the required verification fundamentals for moving to a more
+complex DUT.
