@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="testbench_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="\$unit_design_sv_3724373640 " />
+            <top_module name="glbl" />
+            <top_module name="std" />
+            <top_module name="testbench" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="6,245.543334 us"></ZoomStartTime>
+      <ZoomEndTime time="7,284.543335 us"></ZoomEndTime>
+      <Cursor1Time time="6,418.710000 us"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="340"></NameColumnWidth>
+      <ValueColumnWidth column_width="150"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="7" />
+   <wvobject fp_name="/testbench/intf/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/rstn" type="logic">
+      <obj_property name="ElementShortName">rstn</obj_property>
+      <obj_property name="ObjectShortName">rstn</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/a" type="array">
+      <obj_property name="ElementShortName">a[7:0]</obj_property>
+      <obj_property name="ObjectShortName">a[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/b" type="array">
+      <obj_property name="ElementShortName">b[7:0]</obj_property>
+      <obj_property name="ObjectShortName">b[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/op" type="array">
+      <obj_property name="ElementShortName">op[2:0]</obj_property>
+      <obj_property name="ObjectShortName">op[2:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/result" type="array">
+      <obj_property name="ElementShortName">result[7:0]</obj_property>
+      <obj_property name="ObjectShortName">result[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/testbench/intf/carry" type="logic">
+      <obj_property name="ElementShortName">carry</obj_property>
+      <obj_property name="ObjectShortName">carry</obj_property>
+   </wvobject>
+</wave_config>
