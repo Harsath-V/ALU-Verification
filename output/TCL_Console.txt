@@ -1,0 +1,72 @@
+# run 1s
+T=0 [Driver] starting ...
+T=0 [Monitor] starting ...
+T=30000 [Scoreboard] First transaction captured, waiting for DUT output...
+T=20971670000 [Scoreboard] Summary: Passed=524290, Failed=0
+==============================
+FUNCTIONAL COVERAGE
+==============================
+cp_op    = 100.00%
+cp_a     = 100.00%
+cp_b     = 100.00%
+Cross Overall  = 100.00%
+Overall  = 100.00%
+==============================
+$finish called at time : 20971670 ns : File "C:/Harsath/ALU_Verification/ALU_Verification.srcs/sources_1/new/testbench.sv" Line 504
+run: Time (s): cpu = 00:00:05 ; elapsed = 00:00:17 . Memory (MB): peak = 1938.543 ; gain = 0.000
+xsim: Time (s): cpu = 00:00:07 ; elapsed = 00:00:19 . Memory (MB): peak = 1938.543 ; gain = 10.113
+INFO: [USF-XSim-96] XSim completed. Design snapshot 'testbench_behav' loaded.
+INFO: [USF-XSim-97] XSim simulation ran for 1s
+launch_simulation: Time (s): cpu = 00:00:09 ; elapsed = 00:00:23 . Memory (MB): peak = 1938.543 ; gain = 10.113
+write_xsim_coverage -cov_db_dir ALU_COV_DIR -cov_db_name ALU_COV
+INFO:  (TCL) Writing Functional Coverage Database at path : ALU_COV_DIR\xsim.covdb\ALU_COV\xsim.covinfo
+INFO-SAVE : (TCL) Code Coverage DB saved successfully at : ALU_COV_DIR\xsim.codeCov\ALU_COV\xsim.CCInfo
+export_xsim_coverage -cov_db_name ALU_COV -cov_db_dir ALU_COV_DIR -output_dir ALU_COV_REPORT -open_html true
+INFO:  (TCL) Writing Functional Coverage Database at path : xsim.covdb\xsim.covinfo
+INFO-SAVE : (TCL) Code Coverage DB saved successfully at : xsim.codeCov\xsim.CCInfo
+
+ Options Set are : 
+
+   Report Format              : html
+   Log File                   : xcrg.log
+   Functional Coverage Dir[s] : ALU_COV_DIR
+   Functional Coverage DB[s]  : ALU_COV
+   Code Coverage Dir[s]       : ALU_COV_DIR
+   Code Coverage DB[s]        : ALU_COV
+
+
+********************************************************
+                  Code Coverage Report 
+********************************************************
+
+ Restoring Code Coverage DB[s] from : 
+  1	ALU_COV_DIR/xsim.codeCov/ALU_COV/xsim.CCInfo
+
+ Code Coverage HTML Report directory              : ALU_COV_REPORT/codeCoverageReport
+
+ Line Coverage Score 92.3611
+ Branch Coverage Score 100
+ Condition Coverage Score 97.619
+ Toggle Coverage Score 37.71
+
+
+
+********************************************************
+                  Functional Coverage Report 
+********************************************************
+
+ Restoring Functional Coverage DB[s] from : 
+  1	ALU_COV_DIR/xsim.covdb/ALU_COV/xsim.covinfo
+
+ Line Coverage Score 92.3611
+ Branch Coverage Score 100
+ Condition Coverage Score 97.619
+ Toggle Coverage Score 37.71
+
+ Functional Coverage HTML Report directory        : ALU_COV_REPORT/functionalCoverageReport
+
+ Creating dashboard.html 
+
+ Creating groups.html 
+
+ Creating grp0.html 
