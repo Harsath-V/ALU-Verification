@@ -46,13 +46,15 @@ interface intf(input bit clk);
 
   // Driver Clocking Block: Outputs from TB -> Inputs to DUT
   clocking driver_cb @(posedge clk);
-    default input #1step output #1ns;
+//    default input #1step output #1ns;
+    default input #1step;
     output rstn, a, b, op;
   endclocking
 
   // Monitor Clocking Block: Inputs to TB <- Outputs from DUT
   clocking monitor_cb @(posedge clk);
-    default input #1step output #1ns;
+//    default input #1step output #1ns;
+    default input #1step;
     input rstn, a, b, op, result, carry;
   endclocking
 
@@ -411,7 +413,7 @@ class env;
       m0.scb_mbx = scb_mbx; s0.scb_mbx = scb_mbx;
       d0.drv_done = drv_done; g0.drv_done = drv_done;
       m0.c0 = c0;
-
+      
       d0.vif = vif;
       m0.vif = vif;
       
